@@ -1,0 +1,45 @@
+.nineteen {
+  font-size: 1.5rem;
+  font-weight: bold;
+  font-variant: small-caps;
+  letter-spacing: 0;
+  line-height: 1.5rem;
+  text-align: center;
+}
+.menu {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 0 1rem;
+  margin: 1rem 0;
+}
+
+.dealBtn {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: black;
+  background-color: #f0f0f0;
+  width: 100vw;
+}
+
+.timer {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: white;
+  background-color: green;
+  width: 100vw;
+}

@@ -1,0 +1,24 @@
+.scores {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+.scoreOption {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 1.6rem;
+  font-weight: bold;
+  width: 22vw;
+  &.correctScore {
+    background-color: #4caf50;
+    color: white;
+  }
+  &.incorrectScore {
+    background-color: #f44336;
+    color: white;
+  }
+}
