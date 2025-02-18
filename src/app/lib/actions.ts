@@ -15,7 +15,7 @@ const types = [
   "q",
   "k"
 ];
-export const deal = (): { hand: Card[], cut: Card | undefined, score: number } => {
+export function deal(): { hand: Card[], cut: Card | undefined, score: number } {
   // create a deck of cards
   const deck: Card[] = [];
   for (let i = 0; i < suits.length; i++) {
@@ -38,23 +38,10 @@ export const deal = (): { hand: Card[], cut: Card | undefined, score: number } =
   // sort the hand
   hand.sort((a, b) => types.indexOf(a.type) - types.indexOf(b.type));
   const score = calculatedScore(hand, cut);
-  console.debug('Dealing: ', hand, cut, shuffled, score);
   return { hand, cut, score };
 };
-
-export function calculatedScore(hand: Card[], cut: Card): number {
-  // face cards are worth 10
-  // aces are worth 1
-  // all other cards are worth their face value
-  // 15s are worth 2 points
-  // pairs are worth 2 points
-  // three of a kind is worth 6 points
-  // four of a kind is worth 12 points
-  // a run of three is worth 3 points
-  // a run of four is worth 4 points
-  // a run of five is worth 5 points
-  const cards = [...hand, cut];
-  const cardPointValues = cards.map(card => {
+export function getCardPointValues(cards: Card[]) {
+  return cards.map(card => {
     if (card.type === "a") {
       return 1;
     } else if (card.type === "j" || card.type === "q" || card.type === "k") {
@@ -62,8 +49,10 @@ export function calculatedScore(hand: Card[], cut: Card): number {
     } else {
       return parseInt(card.type);
     }
-  });
-  const cardRunValues = cards.map(card => {
+  })
+};
+export function getCardOrder(cards: Card[]) {
+  return cards.map(card => {
     switch (card.type) {
       case "a":
         return 1;
@@ -76,72 +65,111 @@ export function calculatedScore(hand: Card[], cut: Card): number {
       default:
         return parseInt(card.type);
     }
-  });
-  let score = 0;
-  // check for 15s
-  // see how may ways we can add the cardValues to get 15
-  for (let i = 0; i < cards.length; i++) {
-    let total = cardPointValues[i];
-    if (total === 15) {
-      score += 2;
+  })
+};
+export function countCombinations(arr: number[], target: number): number {
+  let count = 0;
+  function backtrack(index: number, currentSum: number) {
+    if (index === arr.length) {
+      if (currentSum === target) {
+        count++;
+      }
+      return;
     }
-    for (let j = i + 1; j < cards.length; j++) {
-      total += cardPointValues[j];
-      if (total === 15) {
-        score += 2;
+    // Include the current element
+    backtrack(index + 1, currentSum + arr[index]);
+    // Exclude the current element
+    backtrack(index + 1, currentSum);
+  }
+  backtrack(0, 0);
+  return count;
+}
+// count the number of times each element appears in the array
+export function countElements(arr: number[] | string[]): { [key: string]: number } {
+  const counts: { [key: string]: number } = {};
+
+  for (const element of arr) {
+    counts[element] = (counts[element] || 0) + 1;
+  }
+
+  return counts;
+}
+export function calculateRuns(cardRunValues: number[]): number[] {
+  const runs: number[] = [];
+  let runLength = 1;
+
+  for (let i = 1; i < cardRunValues.length; i++) {
+    if (cardRunValues[i] === cardRunValues[i - 1] + 1) {
+      runLength++;
+    } else if (cardRunValues[i] !== cardRunValues[i - 1]) {
+      if (runLength > 1) {
+        runs.push(runLength);
       }
-      for (let k = j + 1; k < cards.length; k++) {
-        total += cardPointValues[k];
-        if (total === 15) {
-          score += 2;
-        }
-        for (let l = k + 1; l < cards.length; l++) {
-          total += cardPointValues[l];
-          if (total === 15) {
-            score += 2;
-          }
-          total -= cardPointValues[l];
-        }
-        total -= cardPointValues[k];
-      }
-      total -= cardPointValues[j];
+      runLength = 1;
     }
   }
+
+  if (runLength > 1) {
+    runs.push(runLength);
+  }
+
+  return runs;
+}
+export function calculatedScore(hand: Card[], cut: Card): number {
+  // face cards are worth 10
+  // aces are worth 1
+  // all other cards are worth their face value
+  // 15s are worth 2 points
+  // pairs are worth 2 points
+  // three of a kind is worth 6 points
+  // four of a kind is worth 12 points
+  // a run of three is worth 3 points
+  // a run of four is worth 4 points
+  // a run of five is worth 5 points
+  const cards = [...hand, cut];
+  const cardPointValues = getCardPointValues(cards);
+  const cardOrder = getCardOrder(cards).sort((a, b) => a - b);
+
+  let score = 0;
+  // check for 15s
+  const fifteens = countCombinations(cardPointValues, 15);
+  score += fifteens * 2;
   // check for pairs, three of a kind, and four of a kind
-  for (let i = 0; i < cards.length; i++) {
-    let total = 0;
-    for (let j = i; j < cards.length; j++) {
-      if (cards[i].type === cards[j].type) {
-        total++;
-      }
-    }
-    if (total === 2) {
+  const kinds = countElements(cardOrder);
+  for (const count of Object.values(kinds)) {
+    if (count === 2) {
       score += 2;
-    } else if (total === 3) {
+    } else if (count === 3) {
       score += 6;
-    } else if (total === 4) {
+    } else if (count === 4) {
       score += 12;
     }
   }
   // check for flushes of the same suit
-  for (let i = 0; i < cards.length; i++) {
-    let total = 0;
-    for (let j = i; j < cards.length; j++) {
-      if (cards[i].suit === cards[j].suit) {
-        total++;
-      }
-    }
-    if (total === 4) {
+  // flush of 4 can only come from hand
+  // flush of 5 can come from hand and cut
+  const handSuits = countElements(hand.map(card => card.suit));
+  for (const count of Object.values(handSuits)) {
+    if (count === 4) {
       score += 4;
-    } else if (total === 5) {
+    }
+  }
+  const handAndCutSuits = countElements(cards.map(card => card.suit));
+  for (const count of Object.values(handAndCutSuits)) {
+    if (count === 5) {
       score += 5;
     }
   }
   // check for multiple runs in cardRunValues
-  for (let i = 0; i < cardRunValues.length; i++) {
+  // if there is 2, 3, 3, 4, 5 in the array, there are two runs of 4
+  // if there is 2, 3, 3, 3, 4 in the array, there are three runs of 3
+  // if there is 2, 3, 4, 5, 6 in the array, there is one run of 5
+  // a run is worth its length
+
+  for (let i = 0; i < cardOrder.length; i++) {
     let total = 0;
-    for (let j = i; j < cardRunValues.length; j++) {
-      if (cardRunValues[i] + j - i === cardRunValues[j]) {
+    for (let j = i; j < cardOrder.length; j++) {
+      if (cardOrder[i] + j - i === cardOrder[j]) {
         total++;
       }
     }
