@@ -1,3 +1,4 @@
+import { run } from "node:test";
 import { Card } from "./types";
 const suits = ["♠", "♣", "♥", "♦"];
 const types = [
@@ -40,6 +41,7 @@ export function deal(): { hand: Card[], cut: Card | undefined, score: number } {
   const score = calculatedScore(hand, cut);
   return { hand, cut, score };
 };
+// return the point value of each card
 export function getCardPointValues(cards: Card[]) {
   return cards.map(card => {
     if (card.type === "a") {
@@ -51,6 +53,7 @@ export function getCardPointValues(cards: Card[]) {
     }
   })
 };
+// return the numeric order of the cards in the hand sorted
 export function getCardOrder(cards: Card[]) {
   return cards.map(card => {
     switch (card.type) {
@@ -65,8 +68,10 @@ export function getCardOrder(cards: Card[]) {
       default:
         return parseInt(card.type);
     }
-  })
+  }).sort((a, b) => a - b);
 };
+// Used to find 15s
+// count the number of ways to sum to target
 export function countCombinations(arr: number[], target: number): number {
   let count = 0;
   function backtrack(index: number, currentSum: number) {
@@ -94,25 +99,36 @@ export function countElements(arr: number[] | string[]): { [key: string]: number
 
   return counts;
 }
+// Used to find runs
+// check for multiple runs in cardRunValues
+// a run is worth its length
+// use the index of the elements in the run to create a signature of the run
+// so 2, 3, 3, 3, 4  would be ['014','024','034']
 export function calculateRuns(cardRunValues: number[]): number[] {
-  const runs: number[] = [];
-  let runLength = 1;
-
-  for (let i = 1; i < cardRunValues.length; i++) {
-    if (cardRunValues[i] === cardRunValues[i - 1] + 1) {
-      runLength++;
-    } else if (cardRunValues[i] !== cardRunValues[i - 1]) {
-      if (runLength > 1) {
-        runs.push(runLength);
+  let runSignature = "";
+  const runs = cardRunValues.map((value, index) => {
+    runSignature = "";
+    for (let i = index; i < cardRunValues.length; i++) {
+      if (runSignature.length === 0) {
+        // start the runSignature
+        runSignature += i.toString();
+        continue;
+      } else if (value === cardRunValues[i + 1]) {
+        // if the next card is the same as the current card
+        continue;
+      } else if (value + 1 === cardRunValues[i + 1]) {
+        // if the next card is the next in the run
+        runSignature += i.toString();
+        continue;
+      } else {
+        // if the next card is not in the run
+        runSignature += i.toString();
+        break;
       }
-      runLength = 1;
     }
-  }
-
-  if (runLength > 1) {
-    runs.push(runLength);
-  }
-
+    console.log(runSignature);
+    return runSignature.length;
+  }).filter(run => run > 2);
   return runs;
 }
 export function calculatedScore(hand: Card[], cut: Card): number {
@@ -134,6 +150,7 @@ export function calculatedScore(hand: Card[], cut: Card): number {
   // check for 15s
   const fifteens = countCombinations(cardPointValues, 15);
   score += fifteens * 2;
+
   // check for pairs, three of a kind, and four of a kind
   const kinds = countElements(cardOrder);
   for (const count of Object.values(kinds)) {
@@ -160,27 +177,12 @@ export function calculatedScore(hand: Card[], cut: Card): number {
       score += 5;
     }
   }
-  // check for multiple runs in cardRunValues
-  // if there is 2, 3, 3, 4, 5 in the array, there are two runs of 4
-  // if there is 2, 3, 3, 3, 4 in the array, there are three runs of 3
-  // if there is 2, 3, 4, 5, 6 in the array, there is one run of 5
-  // a run is worth its length
 
-  for (let i = 0; i < cardOrder.length; i++) {
-    let total = 0;
-    for (let j = i; j < cardOrder.length; j++) {
-      if (cardOrder[i] + j - i === cardOrder[j]) {
-        total++;
-      }
-    }
-    if (total === 3) {
-      score += 3;
-    } else if (total === 4) {
-      score += 4;
-    } else if (total === 5) {
-      score += 5;
-    }
-  }
+  // check for runs
+  const cardRunValues = cardOrder;
+  const runs = calculateRuns(cardRunValues.sort((a, b) => a - b));
+  score += runs.reduce((acc, run) => acc + run, 0);
+
   // check for his nobs
   for (let i = 0; i < hand.length; i++) {
     if (hand[i].type === "j" && hand[i].suit === cut.suit) {
