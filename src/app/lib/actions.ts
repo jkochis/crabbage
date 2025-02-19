@@ -1,4 +1,3 @@
-import { run } from "node:test";
 import { Card } from "./types";
 const suits = ["♠", "♣", "♥", "♦"];
 const types = [
@@ -103,34 +102,49 @@ export function countElements(arr: number[] | string[]): { [key: string]: number
 // check for multiple runs in cardRunValues
 // a run is worth its length
 // use the index of the elements in the run to create a signature of the run
-// so 2, 3, 3, 3, 4  would be ['014','024','034']
-export function calculateRuns(cardRunValues: number[]): number[] {
-  let runSignature = "";
-  const runs = cardRunValues.map((value, index) => {
-    runSignature = "";
-    for (let i = index; i < cardRunValues.length; i++) {
-      if (runSignature.length === 0) {
-        // start the runSignature
-        runSignature += i.toString();
-        continue;
-      } else if (value === cardRunValues[i + 1]) {
-        // if the next card is the same as the current card
-        continue;
-      } else if (value + 1 === cardRunValues[i + 1]) {
-        // if the next card is the next in the run
-        runSignature += i.toString();
-        continue;
-      } else {
-        // if the next card is not in the run
-        runSignature += i.toString();
-        break;
+export function calculateRuns(arr: number[]): number[] {
+  arr = arr.sort((a, b) => a - b);
+  const runs: number[] = [];
+  const signatures: Set<string> = new Set();
+
+  function isValidRun(subArr: number[]): boolean {
+    if (subArr.length < 3) return false;
+    for (let i = 1; i < subArr.length; i++) {
+      if (subArr[i] - subArr[i - 1] !== 1) {
+        return false;
       }
     }
-    console.log(runSignature);
-    return runSignature.length;
-  }).filter(run => run > 2);
-  return runs;
+    return true;
+  }
+
+  function generateSubsets(
+    index: number,
+    currentSubset: number[],
+    currentIndices: number[]
+  ): void {
+    if (index === arr.length) {
+      if (isValidRun(currentSubset)) {
+        const signature = currentIndices.slice().sort().join('');
+        if (!signatures.has(signature)) {
+          runs.push(currentSubset.length);
+          signatures.add(signature);
+        }
+      }
+      return;
+    }
+
+    generateSubsets(index + 1, [...currentSubset, arr[index]], [...currentIndices, index]);
+    generateSubsets(index + 1, currentSubset, currentIndices);
+  }
+
+  generateSubsets(0, [], []);
+
+  const maxRun: number = Math.max(...runs, 0);
+  const result: number[] = runs.filter((run) => run === maxRun);
+  console.log(result, maxRun);
+  return result;
 }
+
 export function calculatedScore(hand: Card[], cut: Card): number {
   // face cards are worth 10
   // aces are worth 1
