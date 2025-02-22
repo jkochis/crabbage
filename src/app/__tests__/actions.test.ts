@@ -141,6 +141,10 @@ describe('calculateRuns', () => {
     expect(calculateRuns([2, 3, 4, 5, 6])).toEqual([5]);
   });
 
+  test('should return [3, 3] for [1, 1, 2, 3, 10]', () => {
+    expect(calculateRuns([1, 1, 2, 3, 10])).toEqual([3, 3]);
+  });
+
   test('should return [] for an empty array', () => {
     expect(calculateRuns([])).toEqual([]);
   });
